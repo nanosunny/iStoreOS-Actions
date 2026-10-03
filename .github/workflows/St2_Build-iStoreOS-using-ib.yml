@@ -311,7 +311,7 @@ jobs:
           openwrt_kernel: ${{ inputs.openwrt_kernel }}
           auto_kernel: ${{ inputs.auto_kernel }}
           kernel_repo: ophub/kernel
-          kernel_usage: stable
+          kernel_usage: beta
           builder_name: kwonelee
 
       - name: 📜 调整.img.gz 文件名

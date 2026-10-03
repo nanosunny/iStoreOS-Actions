@@ -250,7 +250,7 @@ on:
         type: choice
         options:
           - 6.6.y
-          - 6.12.y
+          - 6.12.94
           - 6.18.y
       auto_kernel:
         description: "自动使用最新内核-未匹配则自动"

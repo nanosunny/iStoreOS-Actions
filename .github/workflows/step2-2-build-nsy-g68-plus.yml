@@ -6,11 +6,11 @@ on:
       kernel_source_url:
         description: '最新 iStoreOS RK3568 固件下载链接 (用于提取内核)'
         required: true
-        default: 'https://fw.koolcenter.com/istoreOS/rk35xx/essepi-r1/-squashfs-sysupgrade.img.gz'
+        default: 'https://fw0.koolcenter.com/iStoreOS/easepi-r1/istoreos-25.12.6-2026103017-easepi-r1-squashfs.img.gz'
   push:
     branches: [ main ]
     paths:
-      - '.github/workflows/build-nsy-g68-plus.yml'
+      - '.github/workflows/step2—build-nsy-g68-plus.yml'
 
 jobs:
   build-and-swap:

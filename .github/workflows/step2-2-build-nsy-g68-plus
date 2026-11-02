@@ -6,7 +6,7 @@ on:
       kernel_source_url:
         description: '最新 iStoreOS RK3568 固件下载链接 (用于提取内核)'
         required: true
-        default: 'https://github.com/istoreos/istoreos/releases/download/2024.12.17/istoreos-rockchip-armv8-generic-squashfs-sysupgrade.img.gz'
+        default: 'https://fw.koolcenter.com/istoreOS/rk35xx/essepi-r1/-squashfs-sysupgrade.img.gz'
   push:
     branches: [ main ]
     paths:

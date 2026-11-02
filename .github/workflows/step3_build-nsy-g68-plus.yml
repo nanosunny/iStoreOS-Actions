@@ -10,7 +10,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - '.github/workflows/step2—build-nsy-g68-plus.yml'
+      - '.github/workflows/step3_build-nsy-g68-plus.yml'
 
 jobs:
   build-and-swap:

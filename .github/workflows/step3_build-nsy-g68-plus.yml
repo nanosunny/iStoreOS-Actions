@@ -29,7 +29,9 @@ jobs:
           # 例如: ./scripts/compile.sh nsy-g68-plus
           # 为了演示，我们创建一个占位符文件，实际运行时会由真实编译过程替代
           mkdir -p bin/targets/rockchip/armv8
-          touch bin/targets/rockchip/armv8/istoreos-rockchip-armv8-nsy-g68-plus-squashfs-sysupgrade.img
+          curl -L -o istoreos_25.12.6_rockchip_nsy-g68-plus_k6.18.59_2026.10.30.img.tar.gz https://github.com/nanosunny/iStoreOS-Actions/releases/download/iStoreOS-25.12.6-RELEASE-dhcp/istoreos_25.12.6_rockchip_nsy-g68-plus_k6.18.59_2026.10.30.img.gz
+          tar -zxvf istoreos_25.12.6_rockchip_nsy-g68-plus_k6.18.59_2026.10.30.img.tar.gz
+          mv istoreos_25.12.6_rockchip_nsy-g68-plus_k6.18.59_2026.10.30.img bin/targets/rockchip/armv8/istoreos-rockchip-armv8-nsy-g68-plus-squashfs-sysupgrade.img
           echo "Base firmware generated at bin/targets/rockchip/armv8/"
 
       # 3. 下载并提取最新 iStoreOS 的内核与模块

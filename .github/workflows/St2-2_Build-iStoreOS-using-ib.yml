@@ -282,6 +282,10 @@ on:
         options:
           - static
           - dhcp
+      istoreos-kernel_source_url:
+        description: '使用的iStoreOS RK3568 固件下载链接 (用于提取内核)'
+        required: true
+        default: 'https://fw0.koolcenter.com/iStoreOS/easepi-r1/istoreos-25.12.6-2026103017-easepi-r1-squashfs.img.gz'
 
 env:
   VERSION: 25.12.6
@@ -345,5 +349,107 @@ jobs:
           tag_name: iStoreOS-${{ env.VERSION }}-${{ inputs.openwrt_rootfs }}-${{ inputs.network_settings }}
           files: |
             ${{ env.PACKAGED_OUTPUTPATH }}/*.img.gz
+            
+      # 1. 下载并提取最新 iStoreOS 的内核与模块
+      - name: Download and Extract New Kernel & Modules
+        run: |
+          mkdir -p workdir/new_kernel
+          cd workdir/new_kernel
+          
+          # 下载固件
+          wget -O base.img.gz "${{ github.event.inputs.kernel_source_url }}"
+          gzip -d base.img.gz
+          
+          # 挂载镜像以提取文件
+          sudo mkdir -p /mnt/new_boot /mnt/new_root
+          LOOP_DEV=$(sudo losetup -f --show -P base.img)
+          
+          # 尝试挂载分区 (通常 p1=boot, p2=root)
+          sudo mount ${LOOP_DEV}p1 /mnt/new_boot || echo "Boot partition mount failed, checking structure"
+          sudo mount ${LOOP_DEV}p2 /mnt/new_root
+          
+          # 提取内核版本
+          NEW_KVER=$(ls /mnt/new_root/lib/modules/)
+          echo "New Kernel Version: $NEW_KVER"
+          echo "NEW_KVER=$NEW_KVER" >> $GITHUB_ENV
+          
+          # 提取内核镜像 (Image 或 zImage)
+          if [ -f /mnt/new_boot/Image ]; then
+            cp /mnt/new_boot/Image ./new_Image
+          elif [ -f /mnt/new_boot/zImage ]; then
+            cp /mnt/new_boot/zImage ./new_zImage
+          fi
+          
+          # 提取内核模块
+          cp -r /mnt/new_root/lib/modules/$NEW_KVER ./new_modules
+          
+          # 清理挂载
+          sudo umount /mnt/new_boot || true
+          sudo umount /mnt/new_root || true
+          sudo losetup -D
+
+      # 2. 替换基础固件中的内核和模块 (保留原 DTB)
+      - name: Swap Kernel and Modules into Base Firmware
+        run: |
+          # 再次重命令固件
+          mv ${{ env.PACKAGED_OUTPUTPATH }}/*.img.gz bin/targets/rockchip/armv8/istoreos-rockchip-armv8-nsy-g68-plus-squashfs-sysupgrade.img
+          
+          BASE_FW="bin/targets/rockchip/armv8/istoreos-rockchip-armv8-nsy-g68-plus-squashfs-sysupgrade.img"
+          # 挂载基础固件
+          sudo mkdir -p /mnt/base_boot /mnt/base_root
+          LOOP_DEV=$(sudo losetup -f --show -P $BASE_FW)
+          
+          sudo mount ${LOOP_DEV}p1 /mnt/base_boot
+          sudo mount ${LOOP_DEV}p2 /mnt/base_root
+          
+          # A. 替换内核镜像
+          if [ -f workdir/new_kernel/new_Image ]; then
+            echo "Replacing Kernel Image..."
+            sudo cp workdir/new_kernel/new_Image /mnt/base_boot/Image
+          elif [ -f workdir/new_kernel/new_zImage ]; then
+            echo "Replacing zImage..."
+            sudo cp workdir/new_kernel/new_zImage /mnt/base_boot/zImage
+          fi
+          
+          # B. 替换内核模块 (关键步骤)
+          echo "Replacing Kernel Modules..."
+          OLD_KVER=$(ls /mnt/base_root/lib/modules/)
+          sudo rm -rf /mnt/base_root/lib/modules/$OLD_KVER
+          sudo cp -r workdir/new_kernel/new_modules /mnt/base_root/lib/modules/${{ env.NEW_KVER }}
+          
+          # 更新模块依赖关系
+          echo "Running depmod..."
+          sudo chroot /mnt/base_root depmod -a ${{ env.NEW_KVER }} || echo "depmod warning ignored"
+          
+          # 同步并卸载
+          sync
+          sudo umount /mnt/base_boot || true
+          sudo umount /mnt/base_root || true
+          sudo losetup -D
+          
+          echo "Kernel swap completed. DTB remains unchanged from original build."
+
+      # 3. 发布固件
+      - name: Upload Release Artifact
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            bin/targets/rockchip/armv8/istoreos-rockchip-armv8-nsy-g68-plus-squashfs-sysupgrade.img
+          tag_name: diy-nsy-g68-plus-kernel-swap-${{ github.run_number }}
+          name: DIY iStoreOS for NSY-G68-Plus (New Kernel, Original DTB)
+          body: |
+            &zwnj;**定制说明：**&zwnj;
+            - &zwnj;**设备型号**&zwnj;: NSY-G68-Plus
+            - &zwnj;**内核来源**&zwnj;: 提取自最新 iStoreOS RK3568 通用固件
+            - &zwnj;**DTB 策略**&zwnj;: &zwnj;**未替换**&zwnj;。保留了原编译环境生成的专属 DTB，以确保硬件兼容性。
+            - &zwnj;**模块策略**&zwnj;: 已替换为新内核对应的 modules 并重建依赖。
+            
+            &zwnj;**默认信息：**&zwnj;
+            - IP: 192.168.100.1
+            - User: root
+            - Pass: password
+          draft: false
+          prerelease: false
+          
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

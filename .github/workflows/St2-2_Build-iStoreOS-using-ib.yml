@@ -392,7 +392,8 @@ jobs:
       - name: Swap Kernel and Modules into Base Firmware
         run: |
           # 再次重命令固件
-          mv ${{ env.PACKAGED_OUTPUTPATH }}/*.img.gz bin/targets/rockchip/armv8/istoreos-rockchip-armv8-nsy-g68-plus-squashfs-sysupgrade.img
+          tar -zxvf ${{ env.PACKAGED_OUTPUTPATH }}/*.img.gz
+          mv ${{ env.PACKAGED_OUTPUTPATH }}/*.img bin/targets/rockchip/armv8/istoreos-rockchip-armv8-nsy-g68-plus-squashfs-sysupgrade.img
           
           BASE_FW="bin/targets/rockchip/armv8/istoreos-rockchip-armv8-nsy-g68-plus-squashfs-sysupgrade.img"
           # 挂载基础固件

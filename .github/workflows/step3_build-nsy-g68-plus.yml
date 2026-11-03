@@ -1,4 +1,4 @@
-name: Build DIY iStoreOS for NSY-G68-Plus (Kernel Swap Only)
+name: step3_Build DIY iStoreOS for NSY-G68-Plus (Kernel Swap Only)
 
 on:
   workflow_dispatch:
